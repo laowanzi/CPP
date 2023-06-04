@@ -111,11 +111,19 @@ ArrayList内部基于动态数组实现，比Array（静态数组）使用起来
 
 #### HashMap 的底层实现
 
-#### JDK1.8 之前
+##### JDK1.8 之前
 
 JDK1.8 之前`HashMap`底层是**数组和链表**结合在一起使用也就是**链表散列**。HashMap 通过 key 的 `hashcode` 经过扰动函数处理过后得到 hash 值，然后通过 `(n - 1) & hash` 判断当前元素存放的位置（这里的 n 指的是数组的长度），如果当前位置存在元素的话，就判断该元素与要存入的元素的 hash 值以及 key 是否相同，如果相同的话，直接覆盖，不相同就通过拉链法解决冲突。
 
-使用 `(n - 1) & hash` 实际上就是为了`hash%n`，当n是2的幂次时， `(n - 1) & hash == hash % n` ，`&`运算能够提高效率。
+所谓扰动函数指的就是 HashMap 的 `hash` 方法。使用 `hash` 方法也就是扰动函数是为了防止一些实现比较差的 `hashCode()` 方法 换句话说使用扰动函数之后可以减少碰撞。
+
+![jdk1.7_hashmap](C:\Users\Zhang Wan\Desktop\学习笔记\Java\Pictures\jdk1.7_hashmap.png)
+
+##### JDK1.8 之后
+
+当链表长度大于阈值之后（同时数组长度大于64，否则会先扩容），将链表转化成红黑树，从而减少搜索时间。
+
+使用 `(n - 1) & hash` 实际上就是为了`hash % n`，当n是2的幂次时， `(n - 1) & hash == hash % n` ，`&`运算能够提高效率。
 
 #### ConcurrentHashMap 和 Hashtable 的区别
 
@@ -126,6 +134,61 @@ JDK1.8 之前`HashMap`底层是**数组和链表**结合在一起使用也就是
   - 在 JDK1.7 的时候，`ConcurrentHashMap` 对整个桶数组进行了分割分段(`Segment`，分段锁)，每一把锁只锁容器其中一部分数据（下面有示意图），多线程访问容器里不同数据段的数据，就不会存在锁竞争，提高并发访问率。
   - 到了 JDK1.8 的时候，`ConcurrentHashMap` 已经摒弃了 `Segment` 的概念，而是直接用 `Node` 数组+链表+红黑树的数据结构来实现，并发控制使用 `synchronized` 和 CAS 来操作。（JDK1.6 以后 `synchronized` 锁做了很多优化） 整个看起来就像是优化过且线程安全的 `HashMap`，虽然在 JDK1.8 中还能看到 `Segment` 的数据结构，但是已经简化了属性，只是为了兼容旧版本；
   - **`Hashtable`(同一把锁)** :使用 `synchronized` 来保证线程安全，效率非常低下。当一个线程访问同步方法时，其他线程也访问同步方法，可能会进入阻塞或轮询状态，如使用 put 添加元素，另一个线程不能使用 put 添加元素，也不能使用 get，竞争会越来越激烈效率越低
+  - `Hashtable`锁的粒度最大， JDK1.7 的 `ConcurrentHashMap` 采用分段锁
+
+**JDK1.7 的 ConcurrentHashMap**：
+
+![java7_concurrenthashmap](C:\Users\Zhang Wan\Desktop\学习笔记\Java\Pictures\java7_concurrenthashmap.png)
+
+首先将数据分为一段一段（这个“段”就是 `Segment`）的存储，然后给每一段数据配一把锁，当一个线程占用锁访问其中一个段数据时，其他段的数据也能被其他线程访问。
+
+**`ConcurrentHashMap` 是由 `Segment` 数组结构和 `HashEntry` 数组结构组成**。
+
+`Segment` 继承了 `ReentrantLock`,所以 `Segment` 是一种可重入锁，扮演锁的角色。`HashEntry` 用于存储键值对数据。
+
+**JDK1.8 的 ConcurrentHashMap**：
+
+![java8_concurrenthashmap](C:\Users\Zhang Wan\Desktop\学习笔记\Java\Pictures\java8_concurrenthashmap.png)
+
+
+
+JDK1.8 的 `ConcurrentHashMap` 不再是 **Segment 数组 + HashEntry 数组 + 链表**，而是 **Node 数组 + 链表 / 红黑树**。不过，Node 只能用于链表的情况，红黑树的情况需要使用 **`TreeNode`**。当冲突链表达到一定长度时，链表会转换成红黑树。
+
+`ConcurrentHashMap` 取消了 `Segment` 分段锁，采用 `Node + CAS + synchronized` 来保证并发安全。数据结构跟 `HashMap` 1.8 的结构类似，数组+链表/红黑二叉树。Java 8 在链表长度超过一定阈值（8）时将链表（寻址时间复杂度为 O(N)）转换为红黑树（寻址时间复杂度为 O(log(N))）。
+
+Java 8 中，锁粒度更细，`synchronized` 只锁定当前链表或红黑二叉树的首节点，这样只要 hash 不冲突，就不会产生并发，就不会影响其他 Node 的读写，效率大幅提升。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

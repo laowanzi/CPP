@@ -20,11 +20,12 @@ HTTP是超文本传输协议，也就是HyperText Transfer Protocol
 
 ###  HTTP常见字段
 
-* Host：表示域名
-* Content-Length：数据长度（单位：字节）
-* Connection：是否保持连接
-* Content-Type：本次数据的格式
-* Content-Encoding：说明数据的压缩方法
+* `Host`：表示域名
+* `Content-Length`：数据长度（单位：字节）
+* `Connection`：是否保持连接
+* `Content-Type`：本次数据的格式
+* `Content-Encoding`：说明数据的压缩方法
+* `Accept-Encoding`：接受的压缩方法
 
 ## GET和POST
 
@@ -46,11 +47,22 @@ POST方式是不安全，不幂等，（大部分）不可缓存的
 
 强缓存使用响应头部`Cache-Control`和`Expires`
 
-`Cache-Control`：是一个相对时间，优先级更高，选项更多，设置更加精细，所以推荐使用
+`Cache-Control`：是一个相对时间，**优先级更高**，选项更多，设置更加精细，所以推荐使用
 
 `Expires`：是一个绝对时间
 
 协商缓存：未命中强制缓存时才能发起带有协商缓存字段的请求
+
+第一种：请求头部中的 `If-Modified-Since` 字段与响应头部中的 `Last-Modified` 字段实现
+
+第二种：请求头部中的 `If-None-Match` 字段与响应头部中的 `ETag` 字段
+
+ `ETag` 信息优先级比 `Last-Modified` 高
+
+第二次收到请求时，服务端比较ETag
+
+* 值相等，发送304
+* 不相等，发送200并且返回最新的资源
 
 ## HTTP特性
 
